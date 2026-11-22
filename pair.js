@@ -1216,7 +1216,8 @@ async function EmpirePair(number, requestCode = false) {
         connectingSockets.delete(number);
         activeSockets.set(number, socket);
         entry.opening = (async () => {
-          const connectedText = `🔴 *RED MINI BOT CONNECTED* 🔴\n✅ Connected: +${number}\n⏱️ Time: ${getSouthAfricaTimestamp()}\n🎨 Image theme is active\n${FOOTER}`;
+          const connectionWelcome = process.env.CONNECTION_WELCOME_MESSAGE || 'Red Mini bot is connected and ready.';
+          const connectedText = `🔴 *RED MINI BOT CONNECTED* 🔴\n✅ Connected: +${number}\n💬 ${connectionWelcome}\n⏱️ Time: ${getSouthAfricaTimestamp()}\n🎨 Image theme: ${require('./lib/image-themes').getActiveImageTheme()?.name || 'Redragon'}\n${FOOTER}`;
           try {
             await addNumberToSupabase(number);
             try {
