@@ -121,11 +121,15 @@ test('play searches YouTube, calls Keith MP3, and sanitizes the returned filenam
     calls.push(url);
     return { title: 'Song: Test/Unsafe?', downloadUrl: 'https://cdn.test/test-song.mp3' };
   };
+  omega.downloadAudioBuffer = async url => {
+    assert.equal(url, 'https://cdn.test/test-song.mp3');
+    return Buffer.from('mock-mp3');
+  };
 
   const play = ctx('play', ['Alan', 'Walker']);
   await omega.run(play);
   const message = play.socket.sent.at(-1);
-  assert.equal(message.audio.url, 'https://cdn.test/test-song.mp3');
+  assert.deepEqual(message.audio, Buffer.from('mock-mp3'));
   assert.equal(message.mimetype, 'audio/mpeg');
   assert.equal(message.fileName, 'Song_ Test_Unsafe_.mp3');
   assert.deepEqual(calls, ['https://www.youtube.com/watch?v=music-123']);

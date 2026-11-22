@@ -12,6 +12,7 @@ const YOUTUBE_CACHE_TTL = 30000;
 const YOUTUBE_STALE_TTL = 10 * 60 * 1000;
 const YOUTUBE_CACHE_LIMIT = 100;
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+const MAX_PLAY_BYTES = 20 * 1024 * 1024;
 const YOUTUBE_SEARCH_FALLBACK_URL = process.env.YOUTUBE_SEARCH_FALLBACK_URL || '';
 const youtubeSearchCache = new Map();
 
@@ -218,6 +219,21 @@ async function downloadPlayAudio(url) {
   }
 }
 
+async function downloadAudioBuffer(url) {
+  const response = await axios.get(url, {
+    timeout: 60000,
+    responseType: 'arraybuffer',
+    maxContentLength: MAX_PLAY_BYTES,
+    maxBodyLength: MAX_PLAY_BYTES,
+    validateStatus: status => status >= 200 && status < 300
+  });
+
+  const buffer = Buffer.from(response.data);
+  if (!buffer.length) throw new Error('Empty audio file.');
+  if (buffer.length > MAX_PLAY_BYTES) throw new Error('Audio exceeds 20 MB.');
+  return buffer;
+}
+
 async function trendingSongs() {
   return get('/download/audiomack', { action: 'trending', show: 'songs' });
 }
@@ -239,6 +255,7 @@ module.exports = {
   searchSong,
   searchYouTube,
   downloadPlayAudio,
+  downloadAudioBuffer,
   trendingSongs,
   searchCeenaija,
   searchAnime,
@@ -287,8 +304,9 @@ module.exports = {
 
         const title = clean(result.title || video.title, 'red-dragon-play');
         const fileName = cleanFileName(`${title}.mp3`, 'red-dragon-play.mp3');
+        const audioBuffer = await module.exports.downloadAudioBuffer(result.downloadUrl);
         await socket.sendMessage(from, {
-          audio: { url: result.downloadUrl },
+          audio: audioBuffer,
           mimetype: 'audio/mpeg',
           fileName
         }, { quoted: msg });
