@@ -1096,9 +1096,10 @@ async function setupWelcomeHandlers(socket) {
     if (!update || update.action !== 'add' || !update.id || !Array.isArray(update.participants) || !update.participants.length) return;
     try {
       const names = update.participants.map(participant => `@${String(participant).split('@')[0].split(':')[0]}`);
+      const welcomeMessage = process.env.WELCOME_MESSAGE || 'Enjoy the group.';
       await socket.sendMessage(update.id, {
         image: { url: getImageUrl('welcome') },
-        caption: `╭─❍ WELCOME TO RED XMD ❍─╮\n┃  ⌬ ${names.join(', ')}\n┃  ⌬ Enjoy the group.\n╰────────────────────────╯\n\n${FOOTER}`,
+        caption: `╭─❍ WELCOME TO RED XMD ❍─╮\n┃  ⌬ ${names.join(', ')}\n┃  ⌬ ${welcomeMessage}\n╰────────────────────────╯\n\n${FOOTER}`,
         mentions: update.participants
       });
     } catch (err) {
