@@ -132,8 +132,8 @@ test('play searches YouTube, calls Keith MP3, and sanitizes the returned filenam
   assert.deepEqual(message.document, Buffer.from('mock-mp3'));
   assert.equal(message.mimetype, 'audio/mpeg');
   assert.equal(message.fileName, 'Song_ Test_Unsafe_.mp3');
-  assert.match(message.caption, /SONG DOWNLOAD/);
-  assert.match(message.caption, /Format: MP3 Document/);
+  assert.match(message.caption, /PLAY DOWNLOAD/);
+  assert.match(message.caption, /Format: MP3/);
   assert.deepEqual(calls, ['https://www.youtube.com/watch?v=music-123']);
 });
 
