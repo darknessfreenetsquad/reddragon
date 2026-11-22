@@ -4,6 +4,14 @@
 
 Red Mini is an Express dashboard and WhatsApp bot. The dashboard and API run on the same server: `/status` is the control center, `/pair` generates a WhatsApp pairing code, and `/api/status` reports health.
 
+## Clone the repository
+
+```bash
+git clone https://github.com/darknessfreenetsquad/reddragon.git
+cd reddragon
+npm ci
+```
+
 ## Quick start: no Supabase required
 
 Supabase is optional. By default, Red Mini stores WhatsApp credentials, Signal keys, linked numbers, settings, admins, and newsletters in the local `DATA_DIR` directory. Pair once, keep that directory persistent, and the bot restores the linked session after a restart.
