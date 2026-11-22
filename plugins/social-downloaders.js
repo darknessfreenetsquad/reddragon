@@ -77,9 +77,26 @@ module.exports = {
       if (!mediaUrl || !/^https:\/\//i.test(mediaUrl)) {
         throw lastError || new Error('No downloadable media was returned.');
       }
+      const response = await axios.get(mediaUrl, {
+        timeout: 60000,
+        responseType: 'arraybuffer',
+        maxContentLength: 50 * 1024 * 1024,
+        maxBodyLength: 50 * 1024 * 1024
+      });
+
+      const buffer = Buffer.from(response.data);
+      const mime = response.headers['content-type'] || 'video/mp4';
+
+      if (!buffer.length) throw new Error('Downloaded media is empty.');
+
       await socket.sendMessage(from, {
-        [provider.type]: { url: mediaUrl },
-        caption: redDragon(`${provider.label} DOWNLOAD`, ['Download complete.'], footer)
+        document: buffer,
+        mimetype: mime,
+        fileName: `${provider.label.toLowerCase()}-download.${mime.includes('video') ? 'mp4' : 'bin'}`,
+        caption: redDragon(`${provider.label.toUpperCase()} DOWNLOAD`, [
+          'Download complete.',
+          'File attached.'
+        ], footer)
       }, { quoted: msg });
     } catch (error) {
       console.error(`${command} downloader error:`, error.message);

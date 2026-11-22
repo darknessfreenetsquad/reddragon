@@ -106,7 +106,18 @@ module.exports = {
         await socket.sendMessage(from, { document: media.buffer, mimetype: media.mime, fileName: cleanFileName(media.fileName), caption: redDragon('DOCUMENT', ['Converted successfully.'], footer) }, { quoted: msg });
       } else if (command === 'to-music' || command === 'tomusic') {
         const audio = await toMp3(media);
-        await socket.sendMessage(from, { audio, mimetype: 'audio/mpeg', ptt: false, caption: redDragon('MUSIC', ['Converted successfully.'], footer) }, { quoted: msg });
+        await socket.sendMessage(from, {
+          document: audio,
+          mimetype: 'audio/mpeg',
+          fileName: cleanFileName(
+            `${path.parse(media.fileName).name}.mp3`,
+            'converted-audio.mp3'
+          ),
+          caption: redDragon('MUSIC CONVERSION', [
+            'Converted successfully.',
+            'Format: MP3'
+          ], footer)
+        }, { quoted: msg });
       } else if (command === 'to-sticker' || command === 'tosticker') {
         await socket.sendMessage(from, { sticker: await toSticker(media) }, { quoted: msg });
       }
