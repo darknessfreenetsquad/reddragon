@@ -306,9 +306,13 @@ module.exports = {
         const fileName = cleanFileName(`${title}.mp3`, 'red-dragon-play.mp3');
         const audioBuffer = await module.exports.downloadAudioBuffer(result.downloadUrl);
         await socket.sendMessage(from, {
-          audio: audioBuffer,
+          document: audioBuffer,
           mimetype: 'audio/mpeg',
-          fileName
+          fileName,
+          caption: redDragon('SONG DOWNLOAD', [
+            `Title: ${title}`,
+            'Format: MP3 Document'
+          ], footer)
         }, { quoted: msg });
         return;
       }

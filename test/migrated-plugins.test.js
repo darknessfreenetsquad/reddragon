@@ -129,9 +129,11 @@ test('play searches YouTube, calls Keith MP3, and sanitizes the returned filenam
   const play = ctx('play', ['Alan', 'Walker']);
   await omega.run(play);
   const message = play.socket.sent.at(-1);
-  assert.deepEqual(message.audio, Buffer.from('mock-mp3'));
+  assert.deepEqual(message.document, Buffer.from('mock-mp3'));
   assert.equal(message.mimetype, 'audio/mpeg');
   assert.equal(message.fileName, 'Song_ Test_Unsafe_.mp3');
+  assert.match(message.caption, /SONG DOWNLOAD/);
+  assert.match(message.caption, /Format: MP3 Document/);
   assert.deepEqual(calls, ['https://www.youtube.com/watch?v=music-123']);
 });
 
