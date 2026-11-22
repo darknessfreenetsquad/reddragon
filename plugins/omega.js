@@ -213,7 +213,7 @@ async function downloadPlayAudio(url) {
     const data = await get('/download/YouTube', { action: 'download', url, type: 'audio', bitrate: 128 });
     const downloadUrl = data?.audio?.mp3?.downloadUrl || data?.audio?.m4a?.downloadUrl || data?.downloadUrl || data?.download_url || data?.url;
     if (!/^https?:\/\//i.test(downloadUrl || '')) throw new Error('Omegatech returned no audio URL.');
-    return { ...data, downloadUrl, title: data.title || 'YouTube audio' };
+    return { ...data, downloadUrl, title: data.title || 'YouTube audio', provider: 'youtube-fallback' };
   } catch (error) {
     throw new Error(`Audio download failed: ${error.message || lastError?.message || 'provider unavailable'}`);
   }
@@ -309,14 +309,20 @@ module.exports = {
         const title = clean(result.title || video.title, 'red-dragon-play');
         const fileName = cleanFileName(`${title}.mp3`, 'red-dragon-play.mp3');
         const audioBuffer = await module.exports.downloadAudioBuffer(result.downloadUrl);
+        const caption = result.provider === 'youtube-fallback'
+          ? redDragon('MUSIC DOWNLOAD', [
+            'Provider: YouTube fallback',
+            `Title: ${result.title || video.title || 'Unknown'}`
+          ], footer)
+          : redDragon('PLAY DOWNLOAD', [
+            `Title: ${title}`,
+            'Format: MP3'
+          ], footer);
         await socket.sendMessage(from, {
           document: audioBuffer,
           mimetype: 'audio/mpeg',
           fileName,
-          caption: redDragon('PLAY DOWNLOAD', [
-            `Title: ${title}`,
-            'Format: MP3'
-          ], footer)
+          caption
         }, { quoted: msg });
         return;
       }
