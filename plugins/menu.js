@@ -6,7 +6,7 @@ const { getImageUrl, getActiveImageTheme } = require('../lib/image-themes');
 
 const CATEGORIES = [
   { icon: '⬇️', name: 'Downloaders', commands: ['download', 'movie', 'movies', 'fb', 'facebook', 'instagram', 'ig', 'tiktok', 'tt', 'twitter', 'tw', 'ytdl', 'ytvideo', 'ytaudio'] },
-  { icon: '🎵', name: 'Music & Audio', commands: ['play', 'music', 'audius', 'soundcloud', 'jamendo', 'spotify', 'applemusic', 'songsearch', 'findsong', 'trending', 'audiomacktrending', 'ceenaija'] },
+  { icon: '🎵', name: 'Music & Audio', commands: ['play', 'music', 'audius', 'soundcloud', 'jamendo', 'spotify', 'applemusic', 'omegamus', 'omegasearch', 'songsearch', 'findsong', 'trending', 'audiomacktrending', 'ceenaija'] },
   { icon: '🎬', name: 'Anime', commands: ['anime', 'crunchyroll'] },
   { icon: '🔧', name: 'Tools', commands: ['weather', 'google', 'translate', 'calc', 'short', 'jid', 'sticker', 'pair', 'converctor', 'converter', 'to-url', 'to-doc', 'to-music', 'to-sticker', 'tgstickers', 'update'] },
   { icon: '😄', name: 'Fun & Games', commands: ['truth', 'dare', 'rps'] },
