@@ -40,10 +40,38 @@ module.exports = {
       });
       const mediaUrl = findMediaUrl(data);
       if (data?.success === false || !mediaUrl) throw new Error('No downloadable video was returned.');
-      await socket.sendMessage(from, {
-        video: { url: mediaUrl },
-        caption: redDragon('DOWNLOAD COMPLETE', ['Media sent successfully.'], footer)
-      }, { quoted: msg });
+      const response = await axios.get(mediaUrl, {
+        timeout: 60000,
+        responseType: 'arraybuffer',
+        maxContentLength: 50 * 1024 * 1024,
+        maxBodyLength: 50 * 1024 * 1024
+      });
+
+      const buffer = Buffer.from(response.data);
+      const contentType = response.headers['content-type'] || '';
+
+      if (!buffer.length) throw new Error('Downloaded file is empty.');
+
+      if (contentType.startsWith('audio/')) {
+        await socket.sendMessage(from, {
+          document: buffer,
+          mimetype: contentType,
+          fileName: 'downloaded-audio',
+          caption: 'Download complete.'
+        }, { quoted: msg });
+      } else if (contentType.startsWith('image/')) {
+        await socket.sendMessage(from, {
+          image: buffer,
+          caption: 'Download complete.'
+        }, { quoted: msg });
+      } else {
+        await socket.sendMessage(from, {
+          document: buffer,
+          mimetype: contentType || 'application/octet-stream',
+          fileName: 'downloaded-file',
+          caption: 'Download complete.'
+        }, { quoted: msg });
+      }
     } catch (error) {
       console.error('universal downloader error:', error.message);
       await socket.sendMessage(from, { text: redDragon('DOWNLOAD FAILED', [error.message], footer) }, { quoted: msg });

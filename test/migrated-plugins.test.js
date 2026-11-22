@@ -55,16 +55,22 @@ test('every registered plugin command alias has a safe local smoke path', async 
 });
 
 test('social and universal downloader plugins validate URLs and send API media', async () => {
-  axios.get = async url => url.includes('/api/download/facebook')
-    ? { data: { success: true, data: { directUrl: 'https://cdn.test/social.mp4' } } }
-    : url.includes('omegatech')
-    ? { data: { success: true, result: { video: [{ url: 'https://cdn.test/all.mp4' }] } } }
-    : { data: { result: { hd: 'https://cdn.test/social.mp4' } } };
+  axios.get = async (url, options = {}) => {
+    if (options.responseType === 'arraybuffer') {
+      return { data: Buffer.from('mock-video'), headers: { 'content-type': 'video/mp4' } };
+    }
+    return url.includes('/api/download/facebook')
+      ? { data: { success: true, data: { directUrl: 'https://cdn.test/social.mp4' } } }
+      : url.includes('omegatech')
+        ? { data: { success: true, result: { video: [{ url: 'https://cdn.test/all.mp4' }] } } }
+        : { data: { result: { hd: 'https://cdn.test/social.mp4' } } };
+  };
   const socialCtx = ctx('facebook', ['https://facebook.com/test']); await social.run(socialCtx);
   assert.equal(socialCtx.socket.sent.at(-1).video.url, 'https://cdn.test/social.mp4');
   assert.match(socialCtx.socket.sent.at(-1).caption, /𝙍𝙀𝘿 𝙓𝙈𝘿/);
   const universalCtx = ctx('download', ['https://example.com/test']); await universal.run(universalCtx);
-  assert.equal(universalCtx.socket.sent.at(-1).video.url, 'https://cdn.test/all.mp4');
+  assert.deepEqual(universalCtx.socket.sent.at(-1).document, Buffer.from('mock-video'));
+  assert.equal(universalCtx.socket.sent.at(-1).mimetype, 'video/mp4');
 });
 
 test('Facebook downloader maps Omegatech data.directUrl responses', async () => {
