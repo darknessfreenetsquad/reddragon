@@ -1,0 +1,36 @@
+{
+  "name": "red-mini-bot",
+  "version": "1.0.0",
+  "description": "Red Mini WhatsApp Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "start:optimized": "node --max-old-space-size=512 index.js",
+    "start:dashboard": "RED_DASHBOARD_ONLY=1 node index.js",
+    "build": "npm run check",
+    "test": "node --test",
+    "check": "node --check index.js && node --check pair.js && node --check auth-state.js && node --check plugin-loader.js && node --check lib/theme.js && node --check lib/response-style.js && node --check lib/image-themes.js && node --check lib/api.js && node --check lib/ytdl.js && node --check lib/youtube-search.js && node --check lib/myfunc.js && node --check lib/myfunc2.js && node --check lib/converter.js && node --check lib/sticker.js && node --check lib/wavideo.js && node --check lib/index.js && node --check settings.js && node --check plugins/core.js && node --check plugins/menu.js && node --check plugins/image-theme.js && node --check plugins/music.js && node --check plugins/movie.js && node --check plugins/omega.js && node --check plugins/group.js && node --check plugins/converter.js && node --check plugins/update.js && node --check plugins/status.js && node --check plugins/games.js && node --check plugins/social-downloaders.js && node --check plugins/download.js && node --check plugins/protection.js && node --check plugins/sudo.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@whiskeysockets/baileys": "npm:junexbaileys@1.0.7",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "express": "^4.18.2",
+    "form-data": "4.0.6",
+    "fs-extra": "^11.2.0",
+    "moment-timezone": "^0.5.45",
+    "pino": "^8.17.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "parse5": "^7.3.0"
+  },
+  "overrides": {
+    "redstar": {
+      "minimatch": "^3.1.5"
+    }
+  }
+}

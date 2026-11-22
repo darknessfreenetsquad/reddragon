@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: red-mini-bot
+    runtime: node
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/status
+    disk:
+      name: red-mini-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: NODE_VERSION
+        value: 22
