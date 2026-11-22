@@ -39,8 +39,8 @@ async function requireGroupAdmin(ctx, botAction = true) {
     await socket.sendMessage(from, { text: redDragon('GROUP COMMAND', ['Only a group admin or bot owner can use this command.'], footer) }, { quoted: msg });
     return false;
   }
-  if (botAction && !isBotAdmin && !ctx.isOwner) {
-    await socket.sendMessage(from, { text: redDragon('GROUP COMMAND', ['Make the bot a group admin first.'], footer) }, { quoted: msg });
+  if (botAction && !isBotAdmin) {
+    await socket.sendMessage(from, { text: redDragon('GROUP COMMAND', ['The bot must be a group admin before performing this action.'], footer) }, { quoted: msg });
     return false;
   }
   return true;

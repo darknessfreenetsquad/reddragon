@@ -5,6 +5,7 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+const ffmpegPath = require('ffmpeg-static');
 const axios = require('axios');
 const FormData = require('form-data');
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
@@ -59,7 +60,15 @@ async function toMp3(media) {
   const output = path.join(dir, 'output.mp3');
   try {
     await fs.writeFile(input, media.buffer, { mode: 0o600 });
-    await runFile('ffmpeg', ['-y', '-i', input, '-vn', '-codec:a', 'libmp3lame', '-q:a', '4', output], { timeout: 45000 });
+    if (!ffmpegPath) throw new Error('FFmpeg binary is not available on this server.');
+    await runFile(ffmpegPath, [
+      '-y',
+      '-i', input,
+      '-vn',
+      '-codec:a', 'libmp3lame',
+      '-q:a', '4',
+      output
+    ], { timeout: 45000 });
     return await fs.readFile(output);
   } finally {
     await fs.remove(dir).catch(() => {});

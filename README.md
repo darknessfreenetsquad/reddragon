@@ -57,7 +57,7 @@ Image themes are stored in [`image-themes.json`](image-themes.json). The owner c
 - `GET /status` — dashboard.
 - `GET /pair` — pairing form.
 - `GET /api/status` — service health, storage mode, and masked linked sessions.
-- `POST /code` — request a pairing code with JSON `{ "number": "27634988678" }`.
+- `POST /code` — request a pairing code with JSON `{ "number": "27800000000" }`.
 - `POST /code/connect-all` — reconnect saved local or Supabase sessions.
 
 ## Verification

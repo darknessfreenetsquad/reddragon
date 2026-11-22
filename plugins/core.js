@@ -18,7 +18,7 @@ async function sendWithTimeout(socket, jid, message, options, timeoutMs = 5000) 
 module.exports = {
   commands: ['alive', 'ping'],
   async run(ctx) {
-    const { socket, msg, from, command, footer, ownerNumber, botName, getUptime } = ctx;
+    const { socket, msg, from, command, footer, ownerName, botName, getUptime } = ctx;
     if (command === 'ping') {
       const started = Date.now();
       await socket.sendMessage(from, { react: { text: '⏳', key: msg.key } });
@@ -40,7 +40,7 @@ module.exports = {
     const minutes = Math.floor((uptime % 3600) / 60);
     const seconds = Math.floor(uptime % 60);
     const imageTheme = getActiveImageTheme();
-    const online = redDragon('BOT ONLINE', [`Bot: ${botName}`, `Owner: ${ownerNumber || 'Not configured'}`, `Uptime: ${hours}h ${minutes}m ${seconds}s`, 'Status: Active', 'Region: South Africa', `Image Theme: ${imageTheme.name}`], footer);
+    const online = redDragon('BOT ONLINE', [`Bot: ${botName}`, `Owner: ${ownerName || 'Red Dragon'}`, `Uptime: ${hours}h ${minutes}m ${seconds}s`, 'Status: Active', 'Region: South Africa', `Image Theme: ${imageTheme.name}`], footer);
     try {
       await sendWithTimeout(socket, from, { image: { url: getImageUrl('welcome') }, caption: online }, { quoted: msg });
     } catch (error) {

@@ -17,17 +17,38 @@ function getSongs(data) {
   const songs = Array.isArray(data?.songs) ? [...data.songs] : [];
   const top = data?.topResult;
 
-  if (top?.videoId && !songs.some(song => song.videoId === top.videoId)) {
-    songs.unshift({
-      videoId: top.videoId,
-      title: top.title,
-      artist: top.subtitles?.[1] || 'Unknown',
-      url: top.url,
-      thumbnails: top.thumbnails
+  if (top) {
+    songs.unshift(top);
+  }
+
+  const results = [];
+  for (const song of songs) {
+    const url = String(song?.url || '').trim();
+    if (!/^https?:\/\//i.test(url)) continue;
+
+    let videoId = String(song?.videoId || '').trim();
+    if (!videoId) {
+      try {
+        const parsed = new URL(url);
+        videoId = parsed.searchParams.get('v') || '';
+      } catch (_) {
+        continue;
+      }
+    }
+
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) continue;
+    if (results.some(item => item.videoId === videoId)) continue;
+
+    results.push({
+      ...song,
+      videoId,
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      title: song.title || 'Unknown title',
+      artist: song.artist || song.subtitles?.[1] || 'Unknown'
     });
   }
 
-  return songs.filter(song => song?.videoId && song?.url).slice(0, 10);
+  return results.slice(0, 10);
 }
 
 async function searchMusic(query) {
@@ -80,6 +101,7 @@ module.exports = {
   commands: ['omegamus', 'omegasearch', 'omegadoc'],
 
   searchMusic,
+  getSongs,
 
   async run(ctx) {
     const { socket, from, msg, args, command, footer } = ctx;

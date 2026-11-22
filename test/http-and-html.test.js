@@ -74,7 +74,7 @@ test('pairing validates input with local storage', async () => {
   });
   assert.equal((await send('123')).status, 400);
   assert.equal((await send({ bad: 'type' })).status, 400);
-  assert.equal((await request('/code?number=27634988678')).status, 404);
+  assert.equal((await request('/code?number=27800000000')).status, 404);
 });
 
 test('pairing and reconnect are public and use local storage without Supabase', async () => {

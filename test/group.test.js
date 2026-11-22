@@ -76,3 +76,13 @@ test('owners can run moderation commands without group-admin status', async () =
     'remove'
   ]);
 });
+
+test('owners are blocked when the bot is not a group admin', async () => {
+  const ctx = context('kick', ['11111111111']);
+  ctx.isGroupAdmin = false;
+  ctx.isOwner = true;
+  ctx.isBotAdmin = false;
+  await group.run(ctx);
+  assert.equal(ctx.calls.some(item => item[0] === 'participants'), false);
+  assert.match(ctx.calls[0][2].text, /bot must be a group admin/);
+});

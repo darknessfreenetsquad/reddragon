@@ -8,7 +8,7 @@ const baileys = require('@whiskeysockets/baileys');
 
 process.env.SUPABASE_URL = 'https://example.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
-delete process.env.OWNER_NUMBER;
+process.env.OWNER_NUMBER = '27800000000';
 const tables = { sessions: new Map(), numbers: new Map(), configs: new Map(), admins: new Map(), newsletters: new Map() };
 const copy = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 const client = {
@@ -39,11 +39,11 @@ const fakeBaileys = {
     const socket = {
       ev: new EventEmitter(),
       ws: { isOpen: true },
-      user: { id: '27634988678@s.whatsapp.net' },
+      user: { id: '27800000000@s.whatsapp.net' },
       options,
       sent: [],
       async requestPairingCode(number, customCode) {
-        assert.equal(number, '27634988678');
+        assert.equal(number, '27800000000');
         assert.equal(customCode, null, 'must not use the fork’s fixed default pairing code');
         assert.ok(this.ev.listenerCount('creds.update') > 0);
         assert.ok(this.ev.listenerCount('connection.update') > 0);
@@ -69,7 +69,7 @@ Module._load = originalLoad;
 const server = app.listen(0);
 after(() => server.close());
 const request = (path, options) => fetch(`http://127.0.0.1:${server.address().port}${path}`, options);
-const postCode = () => request('/code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: '+27 63 498 8678' }) });
+const postCode = () => request('/code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: '+27 80 000 0000' }) });
 async function until(condition) {
   for (let i = 0; i < 100; i++) {
     if (condition()) return;
@@ -86,9 +86,9 @@ test('connection-close errors are classified as transient', () => {
 test('owner recognition uses Baileys alternate phone JIDs when WhatsApp sends a LID', () => {
   const key = {
     remoteJid: '1847362910@lid',
-    remoteJidAlt: '27634988678@s.whatsapp.net'
+    remoteJidAlt: '27800000000@s.whatsapp.net'
   };
-  assert.deepEqual(pair.getMessageIdentityNumbers(key, { user: { id: 'bot@s.whatsapp.net' } }), ['1847362910', '27634988678']);
+  assert.deepEqual(pair.getMessageIdentityNumbers(key, { user: { id: 'bot@s.whatsapp.net' } }), ['1847362910', '27800000000']);
   assert.equal(pair.isOwnerMessage(key, { user: { id: 'bot@s.whatsapp.net' } }, '12345678901'), true);
   assert.equal(pair.isOwnerMessage({ remoteJid: '1847362910@lid' }, { user: { id: 'bot@s.whatsapp.net' } }, '12345678901'), false);
 });
@@ -104,7 +104,7 @@ test('pairing registers handlers, persists credentials and keys, tracks active s
 
   const socket = sockets[0];
   socket.ev.emit('messages.upsert', {
-    messages: [{ key: { remoteJid: '27634988678@s.whatsapp.net', fromMe: true }, message: { conversation: '.menu' } }]
+    messages: [{ key: { remoteJid: '27800000000@s.whatsapp.net', fromMe: true }, message: { conversation: '.menu' } }]
   });
   await until(() => socket.sent.some(item => item.message.buttons?.length === 5));
   const menuMessage = socket.sent.find(item => item.message.buttons?.length === 5).message;
@@ -122,14 +122,14 @@ test('pairing registers handlers, persists credentials and keys, tracks active s
   socket.options.auth.creds.registered = true;
   socket.ev.emit('creds.update');
   await socket.options.auth.keys.set({ session: { device1: { value: Buffer.from('secret-key') } } });
-  await until(() => tables.sessions.has('27634988678'));
+  await until(() => tables.sessions.has('27800000000'));
   socket.ev.emit('connection.update', { connection: 'open' });
-  await until(() => tables.numbers.has('27634988678') && socket.sent.length > 0);
+  await until(() => tables.numbers.has('27800000000') && socket.sent.length > 0);
 
   const status = await (await request('/api/status')).json();
   assert.equal(status.activeSessions, 1);
   assert.equal(status.database, 'connected');
-  assert.deepEqual(status.sessions, ['*******8678']);
+  assert.deepEqual(status.sessions, ['*******0000']);
   assert.equal((await (await postCode()).json()).status, 'already_connected');
   assert.equal((await request('/code/connect-all', { method: 'POST' })).status, 200);
 
@@ -139,15 +139,15 @@ test('pairing registers handlers, persists credentials and keys, tracks active s
   command('.admin list', '12345678901@s.whatsapp.net');
   await until(() => socket.sent.some(item => item.message.text?.includes('Owner only')));
   const beforeWorkType = socket.sent.length;
-  command('.wtype private', '27634988678@s.whatsapp.net', true);
-  await until(() => tables.configs.get('27634988678')?.config.WORK_TYPE === 'private');
+  command('.wtype private', '27800000000@s.whatsapp.net', true);
+  await until(() => tables.configs.get('27800000000')?.config.WORK_TYPE === 'private');
   await until(() => socket.sent.slice(beforeWorkType).some(item => item.message.react?.text === '✅'));
   await new Promise(resolve => setTimeout(resolve, 20));
   const sentBefore = socket.sent.length;
   command('.ping', '12345678901@s.whatsapp.net');
   await new Promise(resolve => setTimeout(resolve, 50));
   assert.equal(socket.sent.length, sentBefore, 'private mode ignores other users');
-  command('.not-a-real-command', '27634988678@s.whatsapp.net', true);
+  command('.not-a-real-command', '27800000000@s.whatsapp.net', true);
   await until(() => socket.sent.some(item => item.message.text?.includes('Unknown command')));
 
   socket.ev.emit('connection.update', { connection: 'close', lastDisconnect: { error: { output: { statusCode: baileys.DisconnectReason.connectionLost } } } });
@@ -163,5 +163,5 @@ test('pairing registers handlers, persists credentials and keys, tracks active s
   restored.ev.emit('connection.update', { connection: 'open' });
   await until(() => pair.getActiveSessions().length === 1);
   restored.ev.emit('connection.update', { connection: 'close', lastDisconnect: { error: { output: { statusCode: baileys.DisconnectReason.loggedOut } } } });
-  await until(() => !tables.sessions.has('27634988678') && !tables.numbers.has('27634988678'));
+  await until(() => !tables.sessions.has('27800000000') && !tables.numbers.has('27800000000'));
 });

@@ -32,7 +32,6 @@ module.exports = {
     OTP_EXPIRY: 300000,
     BOT_NAME: 'Red Mini',
     OWNER_NAME: 'Red Dragon',
-    OWNER_NUMBER: '27634988678',
     BOT_VERSION: '1.0.0',
     BOT_FOOTER: '© ʀᴇᴅ ᴅʀᴀɢᴏɴ ᴅғs',
     IMAGE_THEME: 'Redragon',

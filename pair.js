@@ -34,8 +34,9 @@ const {
 
 // ========== CONFIGURATION ==========
 const BOT_NAME = process.env.BOT_NAME || 'Red Mini';
-const configuredOwner = process.env.OWNER_NUMBER || defaultConfig.OWNER_NUMBER || '';
+const configuredOwner = process.env.OWNER_NUMBER || '';
 const OWNER_NUMBER = /^\d{10,15}$/.test(configuredOwner) ? configuredOwner : null;
+const OWNER_NAME = process.env.OWNER_NAME || 'Red Dragon';
 const NEWSLETTER_JID = process.env.NEWSLETTER_JID || '120363427119111004@newsletter';
 const FOOTER = '© ʀᴇᴅ ᴅʀᴀɢᴏɴ ᴅғs';
 const BOT_IMAGE = 'https://files.catbox.moe/eumprt.jpg';
@@ -49,7 +50,7 @@ const config = {
   MAX_RETRIES: 3,
   OTP_EXPIRY: 300000,
   BOT_NAME: BOT_NAME,
-  OWNER_NAME: 'Red Dragon',
+  OWNER_NAME,
   OWNER_NUMBER: OWNER_NUMBER,
   BOT_VERSION: '1.0.0',
   BOT_FOOTER: FOOTER,
@@ -362,6 +363,7 @@ function setupCommandHandlers(socket, sessionNumber) {
           prefix,
           footer: FOOTER,
           ownerNumber: OWNER_NUMBER,
+          ownerName: OWNER_NAME,
           botName: BOT_NAME,
           getUptime: () => Math.floor((Date.now() - (socketCreationTime.get(sessionNumber) || Date.now())) / 1000),
           getUserConfig: () => loadUserConfigFromSupabase(sessionNumber),
@@ -381,7 +383,7 @@ function setupCommandHandlers(socket, sessionNumber) {
         const menuText = `╭───❰ 🔴 RED MINI BOT 🔴 ❱───╮
 │
 │ 🤖 *Name:* Red Mini
-│ 👑 *Owner:* ${OWNER_NUMBER || 'Not configured'}
+│ 👑 *Owner:* ${OWNER_NAME}
 │ ⏱️ *Uptime:* ${hours}h ${minutes}m ${seconds}s
 │ 📡 *Status:* Active
 │ 🇿🇦 *Region:* South Africa
@@ -457,7 +459,7 @@ ${FOOTER}`;
         const aliveText = `🔴 *RED MINI IS ONLINE* 🔴
 ━━━━━━━━━━━━━━━━━━
 🤖 *Bot:* Red Mini
-👑 *Owner:* ${OWNER_NUMBER || 'Not configured'}
+👑 *Owner:* ${OWNER_NAME}
 ⏱️ *Uptime:* ${hours}h ${minutes}m ${seconds}s
 📡 *Status:* Active
 🇿🇦 *Region:* South Africa
@@ -802,7 +804,7 @@ ${FOOTER}`;
         }
         const number = args[0];
         if (!number) {
-          await socket.sendMessage(from, { text: '🔐 *Usage:* .pair 27634988678' }, { quoted: msg });
+          await socket.sendMessage(from, { text: '🔐 *Usage:* .pair <number>' }, { quoted: msg });
           return;
         }
 
@@ -828,7 +830,7 @@ ${FOOTER}`;
         const profileText = `👤 *Red Mini Bot Profile*
 ━━━━━━━━━━━━━━━━━━
 🤖 *Name:* Red Mini
-👑 *Owner:* ${OWNER_NUMBER || 'Not configured'}
+👑 *Owner:* ${OWNER_NAME}
 📢 *Newsletter:* ${NEWSLETTER_JID}
 🔢 *Prefix:* ${prefix}
 🇿🇦 *Region:* South Africa

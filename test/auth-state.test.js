@@ -71,16 +71,16 @@ test('database write failures are surfaced to the caller', async () => {
 test('local auth state survives reload and removes credentials', async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'red-mini-auth-'));
   try {
-    const first = await useFileAuthState(directory, '27634988678');
+    const first = await useFileAuthState(directory, '27800000000');
     first.state.creds.registered = true;
     await first.state.keys.set({ session: { device: { value: Buffer.from('local-secret') } } });
     await first.saveCreds();
-    const second = await useFileAuthState(directory, '27634988678');
+    const second = await useFileAuthState(directory, '27800000000');
     assert.equal(second.state.creds.registered, true);
     const keys = await second.state.keys.get('session', ['device']);
     assert.deepEqual(keys.device.value, Buffer.from('local-secret'));
-    await removeFileAuthState(directory, '27634988678');
-    const fresh = await useFileAuthState(directory, '27634988678');
+    await removeFileAuthState(directory, '27800000000');
+    const fresh = await useFileAuthState(directory, '27800000000');
     assert.equal(fresh.state.creds.registered, false);
   } finally {
     await fs.rm(directory, { recursive: true, force: true });
