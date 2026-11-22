@@ -359,11 +359,17 @@ module.exports = {
         if (command === 'ytaudio') {
           const audioUrl = data.audio?.mp3?.downloadUrl || data.audio?.m4a?.downloadUrl;
           if (!audioUrl) throw new Error('No audio format was returned.');
+          const title = clean(data.title, 'youtube-audio');
+          const fileName = cleanFileName(title, 'youtube-audio');
+          const audioBuffer = await downloadAudioBuffer(audioUrl);
           await socket.sendMessage(from, {
-            audio: { url: audioUrl },
+            document: audioBuffer,
             mimetype: 'audio/mpeg',
-            ptt: false,
-            caption: redDragon('YOUTUBE AUDIO', [`${clean(data.title)} — ${clean(data.channel)}`, 'Signed URL is temporary and was not stored.'], footer)
+            fileName: fileName.endsWith('.mp3') ? fileName : `${fileName}.mp3`,
+            caption: redDragon('YOUTUBE AUDIO', [
+              `Title: ${title}`,
+              'Format: MP3 Document'
+            ], footer)
           }, { quoted: msg });
           return;
         }
