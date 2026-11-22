@@ -19,6 +19,19 @@ function findMediaUrl(value) {
   return null;
 }
 
+function validateMediaResponse(response, maxBytes = 50 * 1024 * 1024) {
+  const buffer = Buffer.from(response?.data || []);
+  if (!buffer.length) throw new Error('The provider returned an empty file.');
+  if (buffer.length > maxBytes) throw new Error('The downloaded file exceeds the size limit.');
+
+  const mime = String(response?.headers?.['content-type'] || '')
+    .split(';')[0].trim().toLowerCase();
+  if (mime.includes('text/html') || mime.includes('application/json')) {
+    throw new Error('The provider returned an error page instead of media.');
+  }
+  return { buffer, mime };
+}
+
 module.exports = {
   commands: ['download'],
   async run(ctx) {
@@ -47,10 +60,7 @@ module.exports = {
         maxBodyLength: 50 * 1024 * 1024
       });
 
-      const buffer = Buffer.from(response.data);
-      const contentType = response.headers['content-type'] || '';
-
-      if (!buffer.length) throw new Error('Downloaded file is empty.');
+      const { buffer, mime: contentType } = validateMediaResponse(response);
 
       if (contentType.startsWith('audio/')) {
         await socket.sendMessage(from, {
@@ -78,3 +88,5 @@ module.exports = {
     }
   }
 };
+
+module.exports.validateMediaResponse = validateMediaResponse;

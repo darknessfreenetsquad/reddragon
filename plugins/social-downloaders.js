@@ -14,6 +14,19 @@ function firstUrl(...values) {
   return null;
 }
 
+function validateMediaResponse(response, maxBytes = 50 * 1024 * 1024) {
+  const buffer = Buffer.from(response?.data || []);
+  if (!buffer.length) throw new Error('The provider returned an empty file.');
+  if (buffer.length > maxBytes) throw new Error('The downloaded file exceeds the size limit.');
+
+  const mime = String(response?.headers?.['content-type'] || '')
+    .split(';')[0].trim().toLowerCase();
+  if (mime.includes('text/html') || mime.includes('application/json')) {
+    throw new Error('The provider returned an error page instead of media.');
+  }
+  return { buffer, mime };
+}
+
 const providers = {
   fb: {
     aliases: ['fb', 'facebook'],
@@ -47,6 +60,7 @@ function findProvider(command) {
 
 module.exports = {
   commands: aliases,
+  validateMediaResponse,
   async run(ctx) {
     const { socket, from, msg, command, args, footer } = ctx;
     const provider = findProvider(command);
@@ -84,10 +98,8 @@ module.exports = {
         maxBodyLength: 50 * 1024 * 1024
       });
 
-      const buffer = Buffer.from(response.data);
-      const mime = response.headers['content-type'] || 'video/mp4';
-
-      if (!buffer.length) throw new Error('Downloaded media is empty.');
+      const { buffer, mime: responseMime } = validateMediaResponse(response);
+      const mime = responseMime || 'video/mp4';
 
       await socket.sendMessage(from, {
         document: buffer,

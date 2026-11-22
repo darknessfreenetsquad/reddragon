@@ -74,6 +74,20 @@ test('social and universal downloader plugins validate URLs and send API media',
   assert.equal(universalCtx.socket.sent.at(-1).mimetype, 'video/mp4');
 });
 
+test('downloaders reject empty, oversized, HTML, and JSON provider responses', () => {
+  const validators = [universal.validateMediaResponse, social.validateMediaResponse];
+  for (const validate of validators) {
+    assert.deepEqual(validate({ data: Buffer.from('media'), headers: { 'content-type': 'video/mp4; charset=binary' } }), {
+      buffer: Buffer.from('media'),
+      mime: 'video/mp4'
+    });
+    assert.throws(() => validate({ data: Buffer.alloc(0), headers: {} }), /empty file/);
+    assert.throws(() => validate({ data: Buffer.alloc(6), headers: {} }, 5), /exceeds the size limit/);
+    assert.throws(() => validate({ data: Buffer.from('<html>error</html>'), headers: { 'content-type': 'text/html' } }), /error page/);
+    assert.throws(() => validate({ data: Buffer.from('{}'), headers: { 'content-type': 'application/json; charset=utf-8' } }), /error page/);
+  }
+});
+
 test('Facebook downloader maps Omegatech data.directUrl responses', async () => {
   axios.get = async (url, options) => {
     if (options?.responseType === 'arraybuffer') {
