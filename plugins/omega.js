@@ -12,7 +12,7 @@ const YOUTUBE_CACHE_TTL = 30000;
 const YOUTUBE_STALE_TTL = 10 * 60 * 1000;
 const YOUTUBE_CACHE_LIMIT = 100;
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
-const MAX_PLAY_BYTES = 20 * 1024 * 1024;
+const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
 const YOUTUBE_SEARCH_FALLBACK_URL = process.env.YOUTUBE_SEARCH_FALLBACK_URL || '';
 const youtubeSearchCache = new Map();
 
@@ -223,14 +223,18 @@ async function downloadAudioBuffer(url) {
   const response = await axios.get(url, {
     timeout: 60000,
     responseType: 'arraybuffer',
-    maxContentLength: MAX_PLAY_BYTES,
-    maxBodyLength: MAX_PLAY_BYTES,
+    maxContentLength: MAX_AUDIO_BYTES,
+    maxBodyLength: MAX_AUDIO_BYTES,
     validateStatus: status => status >= 200 && status < 300
   });
 
   const buffer = Buffer.from(response.data);
+
   if (!buffer.length) throw new Error('Empty audio file.');
-  if (buffer.length > MAX_PLAY_BYTES) throw new Error('Audio exceeds 20 MB.');
+  if (buffer.length > MAX_AUDIO_BYTES) {
+    throw new Error('Audio exceeds the 20 MB limit.');
+  }
+
   return buffer;
 }
 
