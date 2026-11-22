@@ -35,7 +35,7 @@ async function requireGroupAdmin(ctx, botAction = true) {
     await socket.sendMessage(from, { text: redDragon('GROUP COMMAND', ['This command only works inside a WhatsApp group.'], footer) }, { quoted: msg });
     return false;
   }
-  if (!isGroupAdmin) {
+  if (!isGroupAdmin && !ctx.isOwner) {
     await socket.sendMessage(from, { text: redDragon('GROUP COMMAND', ['Only a group admin or bot owner can use this command.'], footer) }, { quoted: msg });
     return false;
   }

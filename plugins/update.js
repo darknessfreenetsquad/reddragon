@@ -6,7 +6,7 @@ const axios = require('axios');
 const { redDragon } = require('../lib/response-style');
 
 const runFile = promisify(execFile);
-const REPOSITORY = process.env.BOT_REPOSITORY || 'darknessfreenetsquad/red-mini-trialX';
+const REPOSITORY = process.env.BOT_REPOSITORY || 'darknessfreenetsquad/reddragon';
 
 async function localCommit() {
   try {
@@ -27,6 +27,7 @@ async function latestCommit() {
 
 module.exports = {
   commands: ['update'],
+  repository: REPOSITORY,
   localCommit,
   latestCommit,
   async run(ctx) {

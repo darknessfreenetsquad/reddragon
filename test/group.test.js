@@ -64,3 +64,15 @@ test('non-admins cannot run moderation commands', async () => {
   assert.equal(ctx.calls.some(item => item[0] === 'participants'), false);
   assert.match(ctx.calls[0][2].text, /Only a group admin/);
 });
+
+test('owners can run moderation commands without group-admin status', async () => {
+  const ctx = context('kick', ['11111111111']);
+  ctx.isGroupAdmin = false;
+  ctx.isOwner = true;
+  await group.run(ctx);
+  assert.deepEqual(ctx.calls.find(item => item[0] === 'participants').slice(1), [
+    '123@g.us',
+    ['11111111111@s.whatsapp.net'],
+    'remove'
+  ]);
+});
