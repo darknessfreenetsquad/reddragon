@@ -1,5 +1,7 @@
 # Red Mini Bot
 
+![Red Mini Bot banner](assets/red-mini-banner.jpeg)
+
 Red Mini is an Express dashboard and WhatsApp bot. The dashboard and API run on the same server: `/status` is the control center, `/pair` generates a WhatsApp pairing code, and `/api/status` reports health.
 
 ## Quick start: no Supabase required
