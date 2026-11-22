@@ -244,10 +244,10 @@ async function sendMediaChoice(ctx, item) {
   const { socket, from, msg } = ctx;
   const buffer = await downloadAudio(item);
   await socket.sendMessage(from, {
-    audio: buffer,
+    document: buffer,
     mimetype: 'audio/mpeg',
-    ptt: false,
-    caption: captionFor(item, 'MUSIC AUDIO')
+    fileName: `${item.title.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 60) || 'red-mini-music'}.mp3`,
+    caption: captionFor(item, 'MUSIC DOCUMENT')
   }, { quoted: msg });
 }
 

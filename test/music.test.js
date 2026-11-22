@@ -55,15 +55,16 @@ test('all five providers are registered and old YouTube aliases are absent', () 
   assert.deepEqual(plugin.PROVIDER_ORDER, ['audius', 'soundcloud', 'jamendo', 'spotify', 'applemusic']);
 });
 
-test('.music sends audio directly without button payloads', async () => {
+test('.music sends MP3 documents without button payloads', async () => {
   axios.get = async url => url.includes('/tracks/search')
     ? { data: { data: [track()] } }
     : { data: Buffer.from('fake-mp3-audio') };
   const ctx = context('music');
   await plugin.run(ctx);
   const message = ctx.socket.sent.at(-1).message;
-  assert.ok(Buffer.isBuffer(message.audio));
+  assert.ok(Buffer.isBuffer(message.document));
   assert.equal(message.mimetype, 'audio/mpeg');
+  assert.equal(message.fileName, 'Test-Song.mp3');
   assert.equal(message.buttons, undefined);
 });
 
@@ -79,7 +80,8 @@ test('.music falls back to Jamendo when Audius search has no result', async () =
   const ctx = context('music');
   await plugin.run(ctx);
   const message = ctx.socket.sent.at(-1).message;
-  assert.ok(Buffer.isBuffer(message.audio));
+  assert.ok(Buffer.isBuffer(message.document));
+  assert.equal(message.fileName, 'Jam-Song.mp3');
   assert.equal(message.buttons, undefined);
   assert.match(message.caption, /JAMENDO/);
   assert.match(message.caption, /Jam Song/);
