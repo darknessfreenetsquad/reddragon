@@ -3,6 +3,11 @@
 const axios = require('axios');
 const { redDragon } = require('../lib/response-style');
 
+const FACEBOOK_OMEGA_API = 'https://api.omegatech.app/api/download/Facebook';
+const FACEBOOK_NEXRAY_API = 'https://api.nexray.eu.cc/downloader/facebook';
+const FACEBOOK_TIMEOUT = 30000;
+const FACEBOOK_MAX_SIZE = 100 * 1024 * 1024;
+
 function firstUrl(...values) {
   for (const value of values.flat(Infinity)) {
     if (typeof value === 'string' && /^https?:\/\//i.test(value)) return value;
@@ -25,6 +30,72 @@ function validateMediaResponse(response, maxBytes = 50 * 1024 * 1024) {
     throw new Error('The provider returned an error page instead of media.');
   }
   return { buffer, mime };
+}
+
+function getFacebookUrl(text = '') {
+  const match = String(text).match(/https?:\/\/(?:www\.|m\.|web\.)?(?:facebook\.com|fb\.watch)\/[^\s]+/i);
+  return match ? match[0].replace(/[)\]}>,]+$/, '') : null;
+}
+
+function findFacebookVideoUrl(data) {
+  if (!data || typeof data !== 'object') return null;
+  const preferred = ['directUrl', 'downloadUrl', 'videoUrl', 'hd', 'sd', 'url'];
+  for (const key of preferred) {
+    const value = data[key];
+    if (typeof value === 'string' && /^https?:\/\//i.test(value) && /\.(mp4|m3u8)(?:\?|$)/i.test(value)) return value;
+  }
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const result = findFacebookVideoUrl(item);
+      if (result) return result;
+    }
+  } else {
+    for (const value of Object.values(data)) {
+      if (value && typeof value === 'object') {
+        const result = findFacebookVideoUrl(value);
+        if (result) return result;
+      }
+    }
+  }
+  return null;
+}
+
+async function getFacebookVideo(url) {
+  try {
+    const response = await axios.post(FACEBOOK_OMEGA_API, { action: 'resolve', url, quality: 'hd' }, {
+      timeout: FACEBOOK_TIMEOUT,
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' }
+    });
+    const videoUrl = findFacebookVideoUrl(response.data);
+    if (videoUrl) return { videoUrl, source: 'OmegaTech' };
+  } catch (error) {
+    console.warn('[FB] OmegaTech:', error.message);
+  }
+
+  try {
+    const response = await axios.get(FACEBOOK_NEXRAY_API, {
+      params: { url },
+      timeout: FACEBOOK_TIMEOUT,
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    const videoUrl = findFacebookVideoUrl(response.data);
+    if (videoUrl) return { videoUrl, source: 'NexRay' };
+  } catch (error) {
+    console.warn('[FB] NexRay:', error.message);
+  }
+
+  throw new Error('Unable to download this Facebook video. It may be private, login-protected, or unsupported.');
+}
+
+async function downloadFacebookVideo(url) {
+  const response = await axios.get(url, {
+    responseType: 'arraybuffer',
+    timeout: 60000,
+    maxContentLength: FACEBOOK_MAX_SIZE,
+    maxBodyLength: FACEBOOK_MAX_SIZE,
+    headers: { 'User-Agent': 'Mozilla/5.0', Referer: 'https://www.facebook.com/' }
+  });
+  return validateMediaResponse(response, FACEBOOK_MAX_SIZE).buffer;
 }
 
 const providers = {
@@ -61,10 +132,17 @@ function findProvider(command) {
 module.exports = {
   commands: aliases,
   validateMediaResponse,
+  getFacebookUrl,
+  findFacebookVideoUrl,
+  getFacebookVideo,
+  downloadFacebookVideo,
   async run(ctx) {
     const { socket, from, msg, command, args, footer } = ctx;
     const provider = findProvider(command);
-    const url = args[0];
+    const facebookInput = Array.isArray(args) ? args.join(' ') : String(args || '');
+    const url = provider === providers.fb
+      ? getFacebookUrl(facebookInput) || getFacebookUrl(msg?.message?.conversation || '') || getFacebookUrl(msg?.message?.extendedTextMessage?.text || '')
+      : args[0];
     if (!url) {
       await socket.sendMessage(from, { text: redDragon(`${provider.label} DOWNLOADER`, [`Usage: .${command} <url>`], footer) }, { quoted: msg });
       return;
@@ -75,6 +153,20 @@ module.exports = {
     }
     await socket.sendMessage(from, { react: { text: '📥', key: msg.key } });
     try {
+      if (provider === providers.fb) {
+        const result = await getFacebookVideo(url);
+        const video = await downloadFacebookVideo(result.videoUrl);
+        await socket.sendMessage(from, {
+          video,
+          mimetype: 'video/mp4',
+          caption: redDragon('FACEBOOK DOWNLOAD', [
+            'Download complete.',
+            `Provider: ${result.source}`
+          ], footer)
+        }, { quoted: msg });
+        return;
+      }
+
       const targets = provider.endpoints || [{ url: provider.endpoint, params: () => ({ url }) }];
       let mediaUrl = null;
       let lastError = null;

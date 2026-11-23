@@ -10,10 +10,12 @@ const omega = require('../plugins/omega');
 const { loadPlugins } = require('../plugin-loader');
 
 const originalGet = axios.get;
+const originalPost = axios.post;
 const originalSearchYouTube = omega.searchYouTube;
 const originalDownloadPlayAudio = omega.downloadPlayAudio;
 after(() => {
   axios.get = originalGet;
+  axios.post = originalPost;
   omega.searchYouTube = originalSearchYouTube;
   omega.downloadPlayAudio = originalDownloadPlayAudio;
 });
@@ -55,6 +57,11 @@ test('every registered plugin command alias has a safe local smoke path', async 
 });
 
 test('social and universal downloader plugins validate URLs and send API media', async () => {
+  axios.post = async (url, body) => {
+    assert.match(url, /api\.omegatech\.app\/api\/download\/Facebook/);
+    assert.equal(body.action, 'resolve');
+    return { data: { directUrl: 'https://cdn.test/facebook.mp4' } };
+  };
   axios.get = async (url, options = {}) => {
     if (options.responseType === 'arraybuffer') {
       return { data: Buffer.from('mock-video'), headers: { 'content-type': 'video/mp4' } };
@@ -66,8 +73,8 @@ test('social and universal downloader plugins validate URLs and send API media',
         : { data: { result: { hd: 'https://cdn.test/social.mp4' } } };
   };
   const socialCtx = ctx('facebook', ['https://facebook.com/test']); await social.run(socialCtx);
-  assert.deepEqual(socialCtx.socket.sent.at(-1).document, Buffer.from('mock-video'));
-  assert.equal(socialCtx.socket.sent.at(-1).fileName, 'facebook-download.mp4');
+  assert.deepEqual(socialCtx.socket.sent.at(-1).video, Buffer.from('mock-video'));
+  assert.equal(socialCtx.socket.sent.at(-1).mimetype, 'video/mp4');
   assert.match(socialCtx.socket.sent.at(-1).caption, /𝙍𝙀𝘿 𝙓𝙈𝘿/);
   const universalCtx = ctx('download', ['https://example.com/test']); await universal.run(universalCtx);
   assert.deepEqual(universalCtx.socket.sent.at(-1).document, Buffer.from('mock-video'));
@@ -89,6 +96,11 @@ test('downloaders reject empty, oversized, HTML, and JSON provider responses', (
 });
 
 test('Facebook downloader maps Omegatech data.directUrl responses', async () => {
+  axios.post = async (url, body) => {
+    assert.match(url, /api\.omegatech\.app\/api\/download\/Facebook/);
+    assert.deepEqual(body, { action: 'resolve', url: 'https://facebook.com/new-format', quality: 'hd' });
+    return { data: { directUrl: 'https://cdn.test/omegatech.mp4' } };
+  };
   axios.get = async (url, options) => {
     if (options?.responseType === 'arraybuffer') {
       return { data: Buffer.from('mock-facebook'), headers: { 'content-type': 'video/mp4' } };
@@ -100,7 +112,7 @@ test('Facebook downloader maps Omegatech data.directUrl responses', async () => 
   };
   const socialCtx = ctx('facebook', ['https://facebook.com/new-format']);
   await social.run(socialCtx);
-  assert.deepEqual(socialCtx.socket.sent.at(-1).document, Buffer.from('mock-facebook'));
+  assert.deepEqual(socialCtx.socket.sent.at(-1).video, Buffer.from('mock-facebook'));
 });
 
 test('Omegatech commands map search, trending, anime, and YouTube metadata safely', async () => {
