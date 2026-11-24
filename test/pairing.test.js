@@ -39,7 +39,7 @@ const fakeBaileys = {
     const socket = {
       ev: new EventEmitter(),
       ws: { isOpen: true },
-      user: { id: '27800000000@s.whatsapp.net' },
+      user: { id: '27800000000:1@s.whatsapp.net' },
       options,
       sent: [],
       async requestPairingCode(number, customCode) {
@@ -126,6 +126,8 @@ test('pairing registers handlers, persists credentials and keys, tracks active s
   socket.ev.emit('connection.update', { connection: 'open' });
   await until(() => tables.numbers.has('27800000000') && socket.sent.length > 0);
   await until(() => socket.sent.some(item => (item.message.caption || item.message.text || '').includes('RED MINI BOT CONNECTED')));
+  const connectionMessage = socket.sent.find(item => (item.message.caption || item.message.text || '').includes('RED MINI BOT CONNECTED'));
+  assert.equal(connectionMessage.jid, '27800000000@s.whatsapp.net');
 
   const status = await (await request('/api/status')).json();
   assert.equal(status.activeSessions, 1);

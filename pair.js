@@ -1229,7 +1229,8 @@ async function EmpirePair(number, requestCode = false) {
         entry.opening = (async () => {
           const connectionWelcome = process.env.CONNECTION_WELCOME_MESSAGE || 'Red Mini bot is connected and ready.';
           const connectedText = `🔴 *RED MINI BOT CONNECTED* 🔴\n✅ Connected: +${number}\n💬 ${connectionWelcome}\n⏱️ Time: ${getSouthAfricaTimestamp()}\n🎨 Image theme: ${require('./lib/image-themes').getActiveImageTheme()?.name || 'Redragon'}\n${FOOTER}`;
-          const target = socket.user?.id || `${number}@s.whatsapp.net`;
+          const targetNumber = phoneNumberFromJid(socket.user?.id) || number;
+          const target = `${targetNumber}@s.whatsapp.net`;
           const notify = (async () => {
             try {
               await sendWithTimeout(socket, target, {
