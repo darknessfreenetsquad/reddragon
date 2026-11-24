@@ -140,6 +140,22 @@ test('Facebook downloader resolves share links before provider lookup', async ()
   assert.deepEqual(socialCtx.socket.sent.at(-1).video, Buffer.from('mock-share'));
 });
 
+test('Facebook downloader falls back to an MP4 document when video upload fails', async () => {
+  axios.post = async () => ({ data: { directUrl: 'https://cdn.test/facebook-upload.mp4' } });
+  axios.get = async (url, options = {}) => {
+    assert.equal(options.responseType, 'arraybuffer');
+    return { data: Buffer.from('mock-upload-fallback'), headers: { 'content-type': 'video/mp4' } };
+  };
+  const socialCtx = ctx('facebook', ['https://facebook.com/direct']);
+  socialCtx.socket.sendMessage = async function(to, message) {
+    if (message.video) throw new Error('Media upload failed on all hosts');
+    this.sent.push(message);
+  };
+  await social.run(socialCtx);
+  assert.deepEqual(socialCtx.socket.sent.at(-1).document, Buffer.from('mock-upload-fallback'));
+  assert.equal(socialCtx.socket.sent.at(-1).fileName, 'facebook-download.mp4');
+});
+
 test('Omegatech commands map search, trending, anime, and YouTube metadata safely', async () => {
   axios.get = async (url, options) => {
     assert.equal(options.timeout, 15000);

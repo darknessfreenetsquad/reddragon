@@ -206,14 +206,25 @@ module.exports = {
       if (provider === providers.fb) {
         const result = await getFacebookVideo(url);
         const video = await downloadFacebookVideo(result.videoUrl);
-        await socket.sendMessage(from, {
-          video,
-          mimetype: 'video/mp4',
-          caption: redDragon('FACEBOOK DOWNLOAD', [
-            'Download complete.',
-            `Provider: ${result.source}`
-          ], footer)
-        }, { quoted: msg });
+        const caption = redDragon('FACEBOOK DOWNLOAD', [
+          'Download complete.',
+          `Provider: ${result.source}`
+        ], footer);
+        try {
+          await socket.sendMessage(from, {
+            video,
+            mimetype: 'video/mp4',
+            caption
+          }, { quoted: msg });
+        } catch (videoError) {
+          console.warn('Facebook video upload failed; sending MP4 document:', videoError.message);
+          await socket.sendMessage(from, {
+            document: video,
+            mimetype: 'video/mp4',
+            fileName: 'facebook-download.mp4',
+            caption
+          }, { quoted: msg });
+        }
         return;
       }
 
