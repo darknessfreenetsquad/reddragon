@@ -37,6 +37,49 @@ function getFacebookUrl(text = '') {
   return match ? match[0].replace(/[)\]}>,]+$/, '') : null;
 }
 
+function extractFacebookCanonicalUrl(html = '') {
+  const source = String(html);
+  const patterns = [
+    /<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i,
+    /<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i,
+    /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = source.match(pattern);
+    if (!match) continue;
+    const candidate = match[1]
+      .replace(/&amp;/gi, '&')
+      .replace(/&#x2F;/gi, '/')
+      .trim();
+    if (/^https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\//i.test(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+async function resolveFacebookCanonicalUrl(url) {
+  if (!/facebook\.com\/share\//i.test(url)) return url;
+
+  try {
+    const response = await axios.get(url, {
+      timeout: 15000,
+      maxRedirects: 5,
+      headers: {
+        Accept: 'text/html',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1'
+      }
+    });
+    return extractFacebookCanonicalUrl(response.data) || url;
+  } catch (error) {
+    console.warn('[FB] Could not resolve share link:', error.message);
+    return url;
+  }
+}
+
 function findFacebookVideoUrl(data) {
   if (!data || typeof data !== 'object') return null;
   const preferred = ['directUrl', 'downloadUrl', 'videoUrl', 'hd', 'sd', 'url'];
@@ -61,27 +104,32 @@ function findFacebookVideoUrl(data) {
 }
 
 async function getFacebookVideo(url) {
-  try {
-    const response = await axios.post(FACEBOOK_OMEGA_API, { action: 'resolve', url, quality: 'hd' }, {
-      timeout: FACEBOOK_TIMEOUT,
-      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' }
-    });
-    const videoUrl = findFacebookVideoUrl(response.data);
-    if (videoUrl) return { videoUrl, source: 'OmegaTech' };
-  } catch (error) {
-    console.warn('[FB] OmegaTech:', error.message);
-  }
+  const canonicalUrl = await resolveFacebookCanonicalUrl(url);
+  const candidates = canonicalUrl === url ? [url] : [canonicalUrl, url];
 
-  try {
-    const response = await axios.get(FACEBOOK_NEXRAY_API, {
-      params: { url },
-      timeout: FACEBOOK_TIMEOUT,
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    const videoUrl = findFacebookVideoUrl(response.data);
-    if (videoUrl) return { videoUrl, source: 'NexRay' };
-  } catch (error) {
-    console.warn('[FB] NexRay:', error.message);
+  for (const candidate of candidates) {
+    try {
+      const response = await axios.post(FACEBOOK_OMEGA_API, { action: 'resolve', url: candidate, quality: 'hd' }, {
+        timeout: FACEBOOK_TIMEOUT,
+        headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' }
+      });
+      const videoUrl = findFacebookVideoUrl(response.data);
+      if (videoUrl) return { videoUrl, source: 'OmegaTech' };
+    } catch (error) {
+      console.warn('[FB] OmegaTech:', error.message);
+    }
+
+    try {
+      const response = await axios.get(FACEBOOK_NEXRAY_API, {
+        params: { url: candidate },
+        timeout: FACEBOOK_TIMEOUT,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      const videoUrl = findFacebookVideoUrl(response.data);
+      if (videoUrl) return { videoUrl, source: 'NexRay' };
+    } catch (error) {
+      console.warn('[FB] NexRay:', error.message);
+    }
   }
 
   throw new Error('Unable to download this Facebook video. It may be private, login-protected, or unsupported.');
@@ -133,6 +181,8 @@ module.exports = {
   commands: aliases,
   validateMediaResponse,
   getFacebookUrl,
+  extractFacebookCanonicalUrl,
+  resolveFacebookCanonicalUrl,
   findFacebookVideoUrl,
   getFacebookVideo,
   downloadFacebookVideo,

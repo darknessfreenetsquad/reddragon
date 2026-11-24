@@ -28,7 +28,9 @@ Keep `DATA_DIR` private. It contains WhatsApp session credentials and Signal key
 
 ### Heroku
 
-This repository includes a `Procfile` with `web: npm start`; Heroku supplies the `PORT` variable automatically. Create a Heroku app, connect it to this GitHub repository, and deploy the `main` branch. In **Settings → Config Vars**, set `OWNER_NUMBER`, `OWNER_NAME`, `DATA_DIR`, and any API keys you use. Heroku dyno filesystems are ephemeral, so configure Supabase for persistent WhatsApp credentials or expect to pair again after a dyno replacement. Set `WELCOME_MESSAGE` for group joins and `CONNECTION_WELCOME_MESSAGE` for the private connected notification. Run only one dyno against one session store.
+This repository includes a `Procfile` with `web: node index.js`; Heroku supplies the `PORT` variable automatically. Create a Heroku app, connect it to this GitHub repository, and deploy the `main` branch. In **Settings → Config Vars**, set `OWNER_NUMBER`, `OWNER_NAME`, `DATA_DIR`, and any API keys you use. Heroku dyno filesystems are ephemeral, so configure Supabase for persistent WhatsApp credentials or expect to pair again after a dyno replacement. Set `WELCOME_MESSAGE` for group joins and `CONNECTION_WELCOME_MESSAGE` for the private connected notification. Run only one dyno against one session store.
+
+Heroku cannot provide a lifetime uptime guarantee: dynos can be restarted, and an always-on dyno requires an active paid dyno plan. For reliable long-term operation, keep the WhatsApp credentials in Supabase and enable one web dyno; do not rely on `data/` inside the dyno as permanent storage. The bot is already a Node.js service, so adding a `speed.py` process would not make replies faster. Reply latency is dominated by WhatsApp and external downloader APIs; the bot avoids waiting on cosmetic reactions, uses bounded provider timeouts, and sends the first usable provider result.
 
 ### Railway
 

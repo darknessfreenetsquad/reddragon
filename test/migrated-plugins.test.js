@@ -115,6 +115,31 @@ test('Facebook downloader maps Omegatech data.directUrl responses', async () => 
   assert.deepEqual(socialCtx.socket.sent.at(-1).video, Buffer.from('mock-facebook'));
 });
 
+test('Facebook downloader resolves share links before provider lookup', async () => {
+  const shareUrl = 'https://www.facebook.com/share/r/example/?mibextid=test';
+  const canonicalUrl = 'https://www.facebook.com/example/posts/123456789/';
+  axios.post = async (url, body) => {
+    assert.equal(body.url, canonicalUrl);
+    throw new Error('OmegaTech cannot parse this post');
+  };
+  axios.get = async (url, options = {}) => {
+    if (url === shareUrl) {
+      return { data: `<meta property="og:url" content="${canonicalUrl}">` };
+    }
+    if (url.includes('nexray.eu.cc')) {
+      assert.equal(options.params.url, canonicalUrl);
+      return { data: { result: { data: [{ type: 'video', url: 'https://cdn.test/share.mp4' }] } } };
+    }
+    if (options.responseType === 'arraybuffer') {
+      return { data: Buffer.from('mock-share'), headers: { 'content-type': 'video/mp4' } };
+    }
+    throw new Error(`Unexpected URL: ${url}`);
+  };
+  const socialCtx = ctx('facebook', [shareUrl]);
+  await social.run(socialCtx);
+  assert.deepEqual(socialCtx.socket.sent.at(-1).video, Buffer.from('mock-share'));
+});
+
 test('Omegatech commands map search, trending, anime, and YouTube metadata safely', async () => {
   axios.get = async (url, options) => {
     assert.equal(options.timeout, 15000);
