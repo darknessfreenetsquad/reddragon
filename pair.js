@@ -323,7 +323,7 @@ function setupCommandHandlers(socket, sessionNumber) {
       const isOwner = isOwnerMessage(msg.key, socket, sessionNumber);
       if (!isOwner && (mode === 'private' || (mode === 'groups' && !isGroup) || (mode === 'inbox' && isGroup))) return;
       commandStarted = true;
-      await safeCommandReaction(socket, from, msg.key, '⏳');
+      safeCommandReaction(socket, from, msg.key, '⏳').catch(() => {});
       let groupMetadata = null;
       let isGroupAdmin = isOwner;
       let isBotAdmin = false;
@@ -1053,7 +1053,7 @@ ${FOOTER}`;
     const detail = String(err?.message || err || 'Unknown error').replace(/\s+/g, ' ').slice(0, 240);
     await socket.sendMessage(msg.key.remoteJid, { text: `❌ ${prefix}${command} failed: ${detail}` }, { quoted: msg }).catch(() => {});
   } finally {
-    if (commandStarted) await safeCommandReaction(socket, from, msg.key, commandError ? '❌' : '✅');
+    if (commandStarted) safeCommandReaction(socket, from, msg.key, commandError ? '❌' : '✅').catch(() => {});
   }
   }
   });
@@ -1099,11 +1099,20 @@ async function setupWelcomeHandlers(socket) {
     try {
       const names = update.participants.map(participant => `@${String(participant).split('@')[0].split(':')[0]}`);
       const welcomeMessage = process.env.WELCOME_MESSAGE || 'Enjoy the group.';
-      await socket.sendMessage(update.id, {
-        image: { url: getImageUrl('welcome') },
-        caption: `╭─❍ WELCOME TO RED XMD ❍─╮\n┃  ⌬ ${names.join(', ')}\n┃  ⌬ ${welcomeMessage}\n╰────────────────────────╯\n\n${FOOTER}`,
-        mentions: update.participants
-      });
+      const welcomeText = `╭─❍ WELCOME TO RED XMD ❍─╮\n┃  ⌬ ${names.join(', ')}\n┃  ⌬ ${welcomeMessage}\n╰────────────────────────╯\n\n${FOOTER}`;
+      try {
+        await socket.sendMessage(update.id, {
+          image: { url: getImageUrl('welcome') },
+          caption: welcomeText,
+          mentions: update.participants
+        });
+      } catch (mediaError) {
+        console.warn('Welcome artwork failed; sending text welcome:', mediaError.message);
+        await socket.sendMessage(update.id, {
+          text: welcomeText,
+          mentions: update.participants
+        });
+      }
     } catch (err) {
       console.error('Welcome handler error:', err.message);
     }
@@ -1220,19 +1229,22 @@ async function EmpirePair(number, requestCode = false) {
         entry.opening = (async () => {
           const connectionWelcome = process.env.CONNECTION_WELCOME_MESSAGE || 'Red Mini bot is connected and ready.';
           const connectedText = `🔴 *RED MINI BOT CONNECTED* 🔴\n✅ Connected: +${number}\n💬 ${connectionWelcome}\n⏱️ Time: ${getSouthAfricaTimestamp()}\n🎨 Image theme: ${require('./lib/image-themes').getActiveImageTheme()?.name || 'Redragon'}\n${FOOTER}`;
-          try {
-            await addNumberToSupabase(number);
+          const target = socket.user?.id || `${number}@s.whatsapp.net`;
+          const notify = (async () => {
             try {
-              await sendWithTimeout(socket, socket.user.id, {
+              await sendWithTimeout(socket, target, {
                 image: { url: getImageUrl('welcome') },
                 caption: connectedText
               });
             } catch (mediaError) {
               console.warn('Connected artwork failed; sending text notification:', mediaError.message);
-              await sendWithTimeout(socket, socket.user.id, { text: connectedText });
+              await sendWithTimeout(socket, target, { text: connectedText });
             }
-          } catch (err) {
-            console.error('Connection setup failed:', err.message);
+          })();
+          const persist = addNumberToSupabase(number);
+          const results = await Promise.allSettled([notify, persist]);
+          for (const result of results) {
+            if (result.status === 'rejected') console.error('Connection setup failed:', result.reason?.message || result.reason);
           }
         })();
         await entry.opening;

@@ -26,6 +26,10 @@ Keep `DATA_DIR` private. It contains WhatsApp session credentials and Signal key
 
 ## Deployment choices
 
+### Heroku
+
+This repository includes a `Procfile` with `web: npm start`; Heroku supplies the `PORT` variable automatically. Create a Heroku app, connect it to this GitHub repository, and deploy the `main` branch. In **Settings → Config Vars**, set `OWNER_NUMBER`, `OWNER_NAME`, `DATA_DIR`, and any API keys you use. Heroku dyno filesystems are ephemeral, so configure Supabase for persistent WhatsApp credentials or expect to pair again after a dyno replacement. Set `WELCOME_MESSAGE` for group joins and `CONNECTION_WELCOME_MESSAGE` for the private connected notification. Run only one dyno against one session store.
+
 ### Railway
 
 Railway is convenient for a quick developer deployment and automatically provides `PORT`. The local filesystem is not a permanent backup unless a persistent volume is attached. Attach a volume and set `DATA_DIR` to its mounted path, then redeploy. Without a volume, the bot can pair and run, but a container replacement may require pairing again.

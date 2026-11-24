@@ -125,6 +125,7 @@ test('pairing registers handlers, persists credentials and keys, tracks active s
   await until(() => tables.sessions.has('27800000000'));
   socket.ev.emit('connection.update', { connection: 'open' });
   await until(() => tables.numbers.has('27800000000') && socket.sent.length > 0);
+  await until(() => socket.sent.some(item => (item.message.caption || item.message.text || '').includes('RED MINI BOT CONNECTED')));
 
   const status = await (await request('/api/status')).json();
   assert.equal(status.activeSessions, 1);
